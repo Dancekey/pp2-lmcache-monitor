@@ -1,0 +1,32 @@
+{
+  "run_id": "customer-readonly-001",
+  "node": null,
+  "source_root": null,
+  "source_overrides": {},
+  "metrics": {},
+  "status": {},
+  "logs": [],
+  "pids": [],
+  "settings": {
+    "pool_gib": 128,
+    "version": null,
+    "model": null,
+    "tp": null,
+    "pp": 2,
+    "dp": null,
+    "layers": null,
+    "mtp": null,
+    "apc": null,
+    "read_policy": "unknown",
+    "transfer_mode": "unknown",
+    "has_d": null,
+    "dataset_manifest": null,
+    "case_origin": null,
+    "request_rate": null,
+    "request_count": null,
+    "output_length": null,
+    "concurrency": null,
+    "warmup": null,
+    "cache_initial_state": null
+  }
+}
