@@ -129,10 +129,12 @@ def historical(run, scan_bytes=32*1024*1024):
     indices = set(range(min(2, len(timeline)))) | set(range(max(0, len(timeline)-2), len(timeline)))
     for key in ('lookup_log_avg_max_ms', 'waiting_max', 'store_host_max_ms', 'retrieve_host_max_ms'):
         indices.update(sorted(range(len(timeline)), key=lambda i:timeline[i].get(key, -1), reverse=True)[:4])
+    if len(timeline) <= 80:
+        indices = set(range(len(timeline)))
     for i in sorted(indices):
         emit('MINUTE', timeline[i])
     emit('MINUTE_SELECTION', dict(total_rows=len(timeline), printed_rows=len(indices),
-                                  scope='first/last and largest values; lookup values are log averages, not request maxima'))
+                                  scope='all rows up to 80, otherwise first/last and peaks; lookup values are log averages, not request maxima'))
     worst, scanned = {}, 0
     files = sorted((run/'incidents').glob('*.jsonl'))
     for path in files:

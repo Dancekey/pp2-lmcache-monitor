@@ -23,8 +23,8 @@ class CaseTests(unittest.TestCase):
             root = Path(d)
             (root/'incidents').mkdir()
             (root/'status.json').write_text(json.dumps(dict(at_wall_ns=60*10**9, started_wall=0, collector_node='synthetic')))
-            (root/'minutes.jsonl').write_text(json.dumps(dict(minute_start_utc='synthetic', numbers={
-                'source': {'native.lookup.lookup_log_avg_ms':dict(n=2,max=20000)}}))+'\n')
+            (root/'minutes.jsonl').write_text((json.dumps(dict(minute_start_utc='synthetic', numbers={
+                'source': {'native.lookup.lookup_log_avg_ms':dict(n=2,max=20000)}}))+'\n')*10)
             queue = dict(record='event', event=dict(event='native.queue', collected_wall_ns=1, values=dict(waiting=5)))
             slow = dict(record='trigger', reason='native.store.host_log_slow', wall_ns=2,
                         event=dict(path='synthetic.log', values=dict(host_ms=2000, prompt='NEVER_PRINT')))
@@ -36,6 +36,8 @@ class CaseTests(unittest.TestCase):
             self.assertIn('queue_context', value)
             self.assertIn('2000', value)
             self.assertNotIn('NEVER_PRINT', value)
+            selection = next(json.loads(line.split(' ', 1)[1]) for line in value.splitlines() if line.startswith('MINUTE_SELECTION '))
+            self.assertEqual(selection['printed_rows'], 10)
 
     def test_benchmark_reports_numeric_summary_only(self):
         with tempfile.TemporaryDirectory() as d:
