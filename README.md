@@ -6,6 +6,19 @@ Python 3.10+，采集与分析仅用标准库。公开仓库可通过 HTTPS 免�
 
 ## 客户终端：克隆并运行
 
+**单组客户压测统一留档**：见 [NIGHT_CAPTURE.md](NIGHT_CAPTURE.md)，汇总池容量、APC/LMCache、PP空泡与长压性能所需证据；`session.py`复用watch并追加完整原日志、指标和资源留档。详细探针/设备trace的现场覆盖仍须分别核验。
+
+已有仓库时，在两端容器各执行：
+
+```bash
+git pull --ff-only
+python -B -S session.py record --run-id customer-night-20261111
+```
+
+无需手写JSON。自动发现当前容器的模型/cache日志与进程，保留实际可读参数和原始启动日志；同时从存活客户端的结果目录、日志附近的常见结果目录中查找本次采集开始后修改的benchmark JSON候选并留档。结果候选仍需确认本轮归属，发现范围不会覆盖整台服务器；找不到会在摘要列出。未知版本/参数不猜值，不自动探测HTTP端口；已有metrics/status可继续用可选配置接入。
+
+先看到 `SESSION_STARTED` 和 `watch-console.log` 中的 `WATCH_STARTED`，再在另一个终端跑原压测。压测及最后请求结束后，监控终端Ctrl+C；随后执行 `python -B -S session.py summary` 打印最近一轮摘要。默认目录为仓库下`runs/session-*`；保留终端连接。自动入口只采已有证据，不自动安装详细hook或启动设备profiler。
+
 **PP=2 空泡独立诊断**：见 [PP_GAP.md](PP_GAP.md)，使用同一个仓库，拉取后运行 `python -S pp_gap/deploy.py --out /opt/ks-pp-gap-luv --run-id pp-gap-001`。该入口只部署参数模板并做CPU检查，不启动模型或缓存。
 
 **夜间五小时或更长压测用 [LONG_RUN.md](LONG_RUN.md) 的 `watch.py`**：持续到手动停止、全程分钟趋势、异常前后留窗。下面 quick 的60秒是短时试采，不作为夜间长压方案。

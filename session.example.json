@@ -1,0 +1,42 @@
+{
+  "run_id": "customer-night-20261111",
+  "node": null,
+  "group": "LMCache_APC",
+  "logs": [],
+  "pids": [],
+  "metrics": {},
+  "status": {},
+  "retain_files": [],
+  "source_root": null,
+  "source_overrides": {},
+  "settings": {
+    "model": null,
+    "version": null,
+    "tp": null,
+    "pp": 2,
+    "dp": null,
+    "layers": null,
+    "mtp": null,
+    "apc": true,
+    "pool_gib": null,
+    "read_policy": "unknown",
+    "transfer_mode": "unknown",
+    "has_d": null,
+    "dataset_manifest": null,
+    "request_rate": null,
+    "request_count": null,
+    "output_length": null,
+    "concurrency": null,
+    "warmup": null,
+    "cache_initial_state": null
+  },
+  "comparison_context": {
+    "tonight_groups": 1,
+    "load_seconds": 7200,
+    "historical_slow_pool_gib_per_host": 480,
+    "preferred_pool_gib_per_host": 128,
+    "actual_runtime_verified": false,
+    "native_apc_control": "NOT_RUN_TONIGHT",
+    "pool_capacity_control": "NOT_RUN_TONIGHT"
+  }
+}
