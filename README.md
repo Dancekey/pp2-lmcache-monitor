@@ -6,6 +6,8 @@ Python 3.10+，采集与分析仅用标准库。公开仓库可通过 HTTPS 免�
 
 ## 客户终端：克隆并运行
 
+**PP=2 空泡独立诊断**：见 [PP_GAP.md](PP_GAP.md)，使用同一个仓库，拉取后运行 `python -S pp_gap/deploy.py --out /opt/ks-pp-gap-luv --run-id pp-gap-001`。该入口只部署参数模板并做CPU检查，不启动模型或缓存。
+
 **夜间五小时或更长压测用 [LONG_RUN.md](LONG_RUN.md) 的 `watch.py`**：持续到手动停止、全程分钟趋势、异常前后留窗。下面 quick 的60秒是短时试采，不作为夜间长压方案。
 
 在自己的容器内、已确认的私有文件系统中执行：

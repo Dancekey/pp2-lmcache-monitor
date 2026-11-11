@@ -1,0 +1,14 @@
+{
+  "state": "TEMPLATE_NOT_AUTHORIZED",
+  "authorization": null,
+  "node": null,
+  "model_pid": null,
+  "model_start_ticks": null,
+  "variables": {
+    "P_API_URL": null,
+    "SERVED_MODEL": null,
+    "ACTUAL_MODEL_PATH": null,
+    "PRIVATE_DATA_DIR": null,
+    "PRIVATE_RUN_DIR": null
+  }
+}
