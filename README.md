@@ -76,6 +76,8 @@ GIT_TERMINAL_PROMPT=0 git -c credential.helper= pull --ff-only
 
 ## 默认日志版能看到什么
 
+需要一次性把已采数据和当前状态打印出来时，见 [COLLECT_CASE.md](COLLECT_CASE.md)：`python -B -S collect_case.py`。它会将旧轮证据与重启后的当前快照分开，不依赖 `$RUN`。
+
 - 当前窗口新增的 Stored/Retrieved 日志条数与日志自报 token 数，不是唯一请求数或实际链路字节。
 - 已有 Stored 日志里的主机耗时、最后观察到的 Running/Waiting、lookup 日志均值。
 - 缓冲跳过、轮转、读取错误和输出预算；没有原始事件就不能补造更细时序。
