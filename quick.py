@@ -16,6 +16,8 @@ def main():
     parser.add_argument('--log', action='append', type=Path, default=[])
     parser.add_argument('--auto-logs', action='store_true', help='Discover existing vLLM/LMCache stdout/stderr file logs')
     parser.add_argument('--duration', type=float, default=60)
+    parser.add_argument('--max-bytes', type=int, default=8*1024*1024,
+                        help='Capture output budget in bytes; default 8 MiB')
     parser.add_argument('--out', type=Path)
     args = parser.parse_args()
     logs = list(dict.fromkeys(args.log))
@@ -30,11 +32,13 @@ def main():
         parser.error('--log must name an existing absolute log path')
     if not 0 < args.duration <= 3600:
         parser.error('--duration must be (0, 3600] seconds')
+    if args.max_bytes <= 0:
+        parser.error('--max-bytes must be positive')
     run_id = 'readonly-%s-%s' % (time.strftime('%Y%m%d-%H%M%S'), uuid.uuid4().hex[:8])
     out = args.out or Path(__file__).resolve().parent / 'runs' / run_id
     config = dict(run_id=run_id, node=socket.gethostname(), logs=[str(p) for p in logs])
     print('READ_ONLY_STARTED seconds=%s output=%s' % (args.duration, out), flush=True)
-    manifest = capture.record(config, out, args.duration, interval=5, max_bytes=8*1024*1024)
+    manifest = capture.record(config, out, args.duration, interval=5, max_bytes=args.max_bytes)
     events, problems, sources = analyze.load_events([out / 'capture.jsonl'])
     analyze.analyze(events, out / 'report', problems=problems, provenance=sources,
                     manifests=[out / 'run.json'])

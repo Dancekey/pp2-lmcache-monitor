@@ -40,6 +40,26 @@ python -S quick.py --log '/实际模型日志绝对路径' --log '/实际缓存�
 
 中途 Ctrl+C 只结束本次采集并汇总已采数据。正常到期同样只结束监控，不停止模型或缓存。
 
+### 一轮压测十几分钟时
+
+服务就绪后先开监控，再在另一个终端运行原压测。60 秒是试采，长轮可设置最多 1 小时、128 MiB 的观察窗口：
+
+```bash
+RUN="runs/monitor-$(date +%Y%m%d-%H%M%S)-$$"
+mkdir -p "$RUN"
+set -o pipefail
+python -S quick.py --auto-logs --duration 3600 --max-bytes 134217728 --out "$RUN" 2>&1 | tee -i "$RUN/console.log"
+```
+
+压测完成后，在**监控终端**按一次 Ctrl+C，程序会保存并生成报告，终端打印 SUMMARY；不会结束另一个终端中的模型或压测。3600 秒是自动结束上限，不要求压测跑满一小时。若先达到时间或输出预算，监控也会提前汇总，需检查覆盖清单，不能当作已覆盖整轮。
+
+`tee -i` 会保留 Python 收到 Ctrl+C 后打印的最终摘要，避免输出记录进程同时退出而丢失 SUMMARY。
+
+```bash
+cat "$RUN/console.log"
+cat "$RUN/report/report.md"
+```
+
 ## 更新工具，无需登录
 
 先结束本工具自己的采集窗口，再在仓库目录执行：
@@ -56,7 +76,7 @@ GIT_TERMINAL_PROMPT=0 git -c credential.helper= pull --ff-only
 - 已有 Stored 日志里的主机耗时、最后观察到的 Running/Waiting、lookup 日志均值。
 - 缓冲跳过、轮转、读取错误和输出预算；没有原始事件就不能补造更细时序。
 
-默认 quick 每 5 秒增量读取，输出上限 8 MiB；单日志每轮最多 256 KiB、残片最多 64 KiB。超过时跳过并计数。仅提取白名单数字，不写 prompt、KV 内容、完整环境变量或任意原始日志行。
+默认 quick 每 5 秒增量读取，输出上限 8 MiB，可用 `--max-bytes` 调整；单日志每轮最多 256 KiB、残片最多 64 KiB。超过时跳过并计数。仅提取白名单数字，不写 prompt、KV 内容、完整环境变量或任意原始日志行。
 
 输出位于 `runs/readonly-时间-编号/`：
 
