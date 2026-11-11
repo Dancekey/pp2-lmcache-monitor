@@ -142,6 +142,23 @@ class WatchTests(unittest.TestCase):
             self.assertEqual(summary['observed_events'], 2)
             self.assertGreater(summary['losses']['write_errors'], 0)
 
+    def test_normal_transfer_flood_does_not_evict_queue_context(self):
+        with tempfile.TemporaryDirectory() as d:
+            engine = Engine(d)
+            queue = dict(event='native.queue', path='log', values=dict(running=1, waiting=2))
+            engine.feed([queue], 0, 0)
+            fast = dict(event='native.store', path='log', values=dict(logged_tokens=32, host_ms=2))
+            engine.feed([fast]*5000, 5, 5*10**9)
+            self.assertLess(len(engine.ring), 10)
+            self.assertTrue(any(e['event'] == 'native.queue' for _,e in engine.ring))
+            self.assertEqual(engine.minute_counts['native.store'], 5000)
+            self.assertEqual(engine.loss['pre_context_evicted'], 0)
+            engine.feed([dict(event='native.retrieve', path='log', source_engine='3', values=dict(logged_tokens=32))], 6, 6*10**9)
+            batch = next(e for _,e in engine.ring if e.get('source_engine') == '3')
+            self.assertEqual(batch['values']['timed_n'], 0)
+            self.assertIsNone(batch['values']['host_ms_max'])
+            engine.close()
+
 
 if __name__ == '__main__':
     unittest.main()

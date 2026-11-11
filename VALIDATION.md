@@ -1,6 +1,6 @@
 # 验证范围
 
-本地 Python 3.10 的 33 项定向检查通过。命令：
+本地 Python 3.10 的 34 项定向检查通过。命令：
 
 ```bash
 python -S -m unittest discover -s . -p 'test_*.py'

@@ -246,6 +246,13 @@ class Engine:
             self.minute_counts.clear()
             self.minute_numbers = {}
 
+    def remember(self, event, now):
+        if len(self.ring) == self.ring.maxlen:
+            self.loss['pre_context_evicted'] += 1
+        self.ring.append((now, event))
+        if self.incident:
+            self.write(self.incident['file'], dict(record='event', event=event), 'evidence')
+
     def feed(self, rows, now, wall, count_poll=True):
         minute = wall//60_000_000_000
         if self.minute is not None and minute != self.minute:
@@ -256,7 +263,7 @@ class Engine:
         self.last_now = now
         if self.incident and now >= self.incident['until']:
             self.finish_incident()
-        alerts = []
+        alerts, normal_transfers = [], {}
         while self.ring and now-self.ring[0][0] > self.pre:
             self.ring.popleft()
         for raw in rows:
@@ -274,11 +281,22 @@ class Engine:
                 if type(value) in (int, float):
                     stat = numbers.setdefault(name+'.'+field, dict(n=0, sum=0, max=value, last=value))
                     stat.update(n=stat['n']+1, sum=stat['sum']+value, max=max(stat['max'], value), last=value)
-            if len(self.ring) == self.ring.maxlen:
-                self.loss['pre_context_evicted'] += 1
-            self.ring.append((now, e))
-            if self.incident:
-                self.write(self.incident['file'], dict(record='event', event=e), 'evidence')
+            if name in ('native.store', 'native.retrieve') and values.get('host_ms', 0) < self.host_ms:
+                key = lane, name
+                batch = normal_transfers.setdefault(key, dict(event='context.transfer_log_batch',
+                    operation=name, path=e.get('path'), source_pid=e.get('source_pid'), source_engine=e.get('source_engine'),
+                    collected_wall_ns=wall, collector_node=self.node,
+                    first_read_offset=e.get('read_offset'), last_read_end_offset=e.get('read_end_offset'),
+                    values=dict(observed_lines=0, logged_tokens_sum=0, timed_n=0, host_ms_sum=0, host_ms_max=None)))
+                batch['last_read_end_offset'] = e.get('read_end_offset')
+                b = batch['values']
+                b['observed_lines'] += 1
+                b['logged_tokens_sum'] += values.get('logged_tokens', 0)
+                if 'host_ms' in values:
+                    b.update(timed_n=b['timed_n']+1, host_ms_sum=b['host_ms_sum']+values['host_ms'],
+                             host_ms_max=max(b['host_ms_max'] or 0, values['host_ms']))
+                continue  # Already counted in minute statistics; do not crowd out queue/health evidence.
+            self.remember(e, now)
             if name in ('health.degraded', 'retrieve.source_missing_or_failed', 'retrieve.recompute_or_bypass'):
                 alerts.append(dict(reason=name, event=e))
             if values.get('lookup_log_avg_ms', 0) >= self.lookup_ms:
@@ -300,6 +318,8 @@ class Engine:
                 self.loss[name] += 1
                 self.queues = {k:v for k,v in self.queues.items() if v['event'].get('path') != e.get('path')}
             alerts.extend(self.boundaries.feed(e, now))
+        for batch in normal_transfers.values():
+            self.remember(batch, now)
         for lane, queue in list(self.queues.items()):
             if now-queue['last'] > max(20, 3*self.poll_seconds):
                 self.queues.pop(lane)
