@@ -91,6 +91,13 @@ class LogTail:
         except OSError:
             pass
 
+    def parse_line(self, text):
+        for event, pattern, keys in PATTERNS:
+            match = pattern.search(text)
+            if match:
+                return dict(event=event, values={k: float(v) for k, v in zip(keys, match.groups())})
+        return None
+
     def read(self, max_read=256 * 1024):
         rows = []
         try:
@@ -114,6 +121,7 @@ class LogTail:
                 start = self.offset
                 data = f.read(max_read)
                 self.offset += len(data)
+            cursor = start-len(self.fragment)
             chunks = (self.fragment + data).split(b'\n')
             self.fragment = chunks.pop()
             if len(self.fragment) > 65536:
@@ -121,15 +129,14 @@ class LogTail:
                 self.fragment = b''
             for line in chunks:
                 text = line.decode('utf-8', errors='replace')
-                for event, pattern, keys in PATTERNS:
-                    match = pattern.search(text)
-                    if match:
-                        rows.append(dict(event=event, path=str(self.path), read_offset=start,
-                                         values={k: float(v) for k, v in zip(keys, match.groups())},
-                                         time_kind='collector_observation_not_original_timestamp'))
-                        break
+                parsed = self.parse_line(text)
+                if parsed is not None:
+                    rows.append(dict(parsed, path=str(self.path), read_offset=cursor,
+                                     read_end_offset=cursor+len(line),
+                                     time_kind='collector_observation_not_original_timestamp'))
                 else:
                     self.filtered_lines += 1
+                cursor += len(line)+1
         except OSError as exc:
             rows.append(dict(event='log.error', path=str(self.path), error_type=type(exc).__name__))
         return rows
